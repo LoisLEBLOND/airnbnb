@@ -1,4 +1,3 @@
-
 <?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_listing'])) {
 	$name = $_POST['name'] ?? '';
@@ -7,15 +6,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_listing'])) {
 	$host_thumbnail_url = $_POST['host_thumbnail_url'] ?? '';
 	$price = $_POST['price'] ?? '';
 	$neighbourhood_group_cleansed = $_POST['neighbourhood_group_cleansed'] ?? '';
-	$review_scores_value = isset($_POST['review_scores_value']) ? $_POST['review_scores_value'] : '';
+	$review_scores_value = isset($_POST['review_scores_value']) ? min(5, $_POST['review_scores_value']) : '';
 
 	try {
-		$dbh = new PDO("mysql:host=localhost;dbname=airbnb;charset=utf8", "root", "");
-		$stmt = $dbh->prepare("INSERT INTO airbnb.`listings` (name, picture_url, host_name, host_thumbnail_url, price, neighbourhood_group_cleansed, review_scores_value) VALUES (?, ?, ?, ?, ?, ?, ?)");
+		$bdd = new PDO("mysql:host=localhost;dbname=airbnb;charset=utf8", "root", "");
+		$stmt = $bdd->prepare("INSERT INTO airbnb.`listings` (name, picture_url, host_name, host_thumbnail_url, price, neighbourhood_group_cleansed, review_scores_value) VALUES (?, ?, ?, ?, ?, ?, ?)");
 		$stmt->execute([$name, $picture_url, $host_name, $host_thumbnail_url, $price, $neighbourhood_group_cleansed, $review_scores_value]);
 		$message = "Annonce ajoutée !";
-		header('Location: ' . $_SERVER['PHP_SELF']);
-		exit;
 	} catch(PDOException $e) {
 		$message = $e->getMessage();
 	}
@@ -44,18 +41,18 @@ $offset = ($page - 1) * $limit;
 
 try {
 	if (!isset($bdd)) {
-		$dbh = new PDO("mysql:host=localhost;dbname=airbnb;charset=utf8", "root", "");
+		$bdd = new PDO("mysql:host=localhost;dbname=airbnb;charset=utf8", "root", "");
 	}
 } catch(PDOException $e) {
 	die($e->getMessage());
 }
 
-$countReq = $dbh->query("SELECT COUNT(*) FROM airbnb.`listings`");
+$countReq = $bdd->query("SELECT COUNT(*) FROM airbnb.`listings`");
 $total = $countReq->fetchColumn();
 $nbPages = ceil($total / $limit);
 
 $requete = "SELECT * FROM airbnb.`listings` ORDER BY $tri " . ($ordre === 'asc' ? 'ASC' : 'DESC') . " LIMIT $limit OFFSET $offset";
-$stmt = $dbh->prepare($requete);
+$stmt = $bdd->prepare($requete);
 $stmt->execute();
 $donnees = $stmt->fetchAll();
 
@@ -92,24 +89,22 @@ echo '</aside>';
 echo '<section class="card listings-card">';
 echo '<div class="listings-header">';
 echo '<h3>Annonces</h3>';
-echo '<form method="get" class="sort-form fancy-sort">';
-echo '<label for="sort" style="font-weight:600;margin-right:8px;">Trier :</label>';
-echo '<select name="sort" id="sort" class="fancy-select">';
+echo '<form method="get" class="sort-form">';
+echo '<label for="sort">Trier :</label>';
+echo '<select name="sort" id="sort">';
 foreach ($trisAutorises as $col) {
 	$selected = ($tri === $col) ? 'selected' : '';
 	echo "<option value='$col' $selected>{$trisLabels[$col]}</option>";
 }
 echo '</select>';
-echo '<select name="order" class="fancy-select">';
+echo '<select name="order">';
 	echo '<option value="asc"'.($ordre==='asc'?' selected':'').'>Croissant</option>';
 	echo '<option value="desc"'.($ordre==='desc'?' selected':'').'>Décroissant</option>';
 echo '</select>';
 if ($page > 1) {
 	echo '<input type="hidden" name="page" value="'.$page.'">';
 }
-echo '<button class="btn btn-primary fancy-btn" type="submit" style="display:flex;align-items:center;gap:6px;">Trier'
-	.($ordre==='asc' ? '<span style="font-size:1.1em;">&#8593;</span>' : '<span style="font-size:1.1em;">&#8595;</span>')
-	.'</button>';
+echo '<button class="btn btn-ghost" type="submit">Trier</button>';
 echo '</form>';
 echo '</div>';
 
@@ -119,9 +114,9 @@ foreach ($donnees as $valeur) {
 	echo '<li class="listing-item">';
 	echo '<div class="listing-body">';
 		echo '<h4 class="listing-title">'.htmlspecialchars($valeur["name"]).'</h4>';
-		echo '<div class="listing-thumb"><img src="'.htmlspecialchars($valeur["picture_url"]).'" alt="Image logement"></div>';
+		echo '<div class="listing-thumb"><img src="'.htmlspecialchars($valeur["picture_url"]).'" alt="Image logement" style="width:100%;height:100%;object-fit:cover;display:block;"></div>';
 		echo '<div class="host-block">';
-			echo '<span class="host-thumb"><img src="'.htmlspecialchars($valeur["host_thumbnail_url"]).'" alt="Hôte"></span>';
+			echo '<span class="host-thumb"><img src="'.htmlspecialchars($valeur["host_thumbnail_url"]).'" alt="Hôte" style="width:100%;height:100%;object-fit:cover;display:block;"></span>';
 			echo '<div class="host-name muted">'.htmlspecialchars($valeur["host_name"]).'</div>';
 			echo '</div>';
 		    echo '<div class="meta" style="margin-top:10px;display:flex;gap:12px;align-items:center;">';
