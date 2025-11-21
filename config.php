@@ -1,6 +1,5 @@
 
 <?php
-// Ajout d'annonce
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_listing'])) {
 	$name = $_POST['name'] ?? '';
 	$picture_url = $_POST['picture_url'] ?? '';
@@ -20,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_listing'])) {
 	}
 }
 
-// Fonctions de tri et pagination
+
 function triValide($tri, $trisAutorises) {
 	return in_array($tri, $trisAutorises) ? $tri : $trisAutorises[0];
 }
@@ -49,7 +48,6 @@ try {
 	die($e->getMessage());
 }
 
-// Compte total pour pagination
 $countReq = $bdd->query("SELECT COUNT(*) FROM airbnb.`listings`");
 $total = $countReq->fetchColumn();
 $nbPages = ceil($total / $limit);
@@ -59,77 +57,100 @@ $stmt = $bdd->prepare($requete);
 $stmt->execute();
 $donnees = $stmt->fetchAll();
 
-// Formulaire d'ajout
-echo '<form method="post" style="margin-bottom:2em;">';
-echo '<h2>Ajouter une annonce</h2>';
-echo '<input type="hidden" name="add_listing" value="1">';
-echo '<label>Nom: <input type="text" name="name" required></label><br>';
-echo '<label>Image (URL): <input type="url" name="picture_url" required></label><br>';
-echo '<label>Propriétaire: <input type="text" name="host_name" required></label><br>';
-echo '<label>Image de l\'hôte (URL): <input type="url" name="host_thumbnail_url" required></label><br>';
-echo '<label>Prix: <input type="number" name="price" required></label><br>';
-echo '<label>Ville: <input type="text" name="neighbourhood_group_cleansed" required></label><br>';
-echo '<label>Score des avis: <input type="number" name="review_scores_value" required></label><br>';
-echo '<button type="submit">Ajouter</button>';
-echo '</form>';
-if (!empty($message)) echo '<div style="color:green">'.htmlspecialchars($message).'</div>';
 
-// Menu déroulant de tri
-echo '<form method="get" style="margin-bottom:1em;">';
-echo '<label for="sort">Trier par :</label> ';
+echo '<link rel="stylesheet" href="style.css">';
+
+echo '<div class="config-page">';
+echo '<div class="config-wrapper">';
+
+echo '<aside class="card form-card">';
+echo '<form method="post" class="create-form">';
+echo '<h2>Ajouter une annonce</h2>';
+echo '<p class="sub">Remplissez les informations ci-dessous pour créer une nouvelle annonce.</p>';
+echo '<input type="hidden" name="add_listing" value="1">';
+
+echo '<div class="form-grid">';
+echo '<div class="form-field"><label>Nom</label><input type="text" name="name" required></div>';
+echo '<div class="form-field"><label>Prix (€)</label><input type="number" name="price" required></div>';
+echo '<div class="form-field"><label>Image (URL)</label><input type="url" name="picture_url" required></div>';
+echo '<div class="form-field"><label>Ville</label><input type="text" name="neighbourhood_group_cleansed" required></div>';
+echo '<div class="form-field"><label>Propriétaire</label><input type="text" name="host_name" required></div>';
+echo '<div class="form-field"><label>Image de l\'hôte (URL)</label><input type="url" name="host_thumbnail_url" required></div>';
+echo '<div class="form-field full-width"><label>Score des avis</label><input type="number" name="review_scores_value" min="0" max="10" required></div>';
+echo '</div>'; 
+
+echo '<div class="form-actions">';
+echo '<button class="btn btn-primary" type="submit">Ajouter</button>';
+echo '<button class="btn btn-ghost" type="reset">Annuler</button>';
+echo '</div>';
+echo '</form>';
+if (!empty($message)) echo '<div class="form-message">'.htmlspecialchars($message).'</div>';
+echo '</aside>';
+
+echo '<section class="card listings-card">';
+echo '<div class="listings-header">';
+echo '<h3>Annonces</h3>';
+echo '<form method="get" class="sort-form">';
+echo '<label for="sort">Trier :</label>';
 echo '<select name="sort" id="sort">';
 foreach ($trisAutorises as $col) {
 	$selected = ($tri === $col) ? 'selected' : '';
 	echo "<option value='$col' $selected>{$trisLabels[$col]}</option>";
 }
-echo '</select> ';
+echo '</select>';
 echo '<select name="order">';
 	echo '<option value="asc"'.($ordre==='asc'?' selected':'').'>Ascendant</option>';
 	echo '<option value="desc"'.($ordre==='desc'?' selected':'').'>Descendant</option>';
-echo '</select> ';
-echo '<button type="submit">Trier</button>';
+echo '</select>';
 if ($page > 1) {
 	echo '<input type="hidden" name="page" value="'.$page.'">';
 }
+echo '<button class="btn btn-ghost" type="submit">Trier</button>';
 echo '</form>';
+echo '</div>';
 
-// Affichage des logements
-echo '<ul style="list-style:none;padding:0;">';
+
+echo '<ul class="listings-grid">';
 foreach ($donnees as $valeur) {
-	echo '<li style="margin-bottom:2em;border-bottom:1px solid #ccc;padding-bottom:1em;">';
-	echo '<img src="'.htmlspecialchars($valeur["picture_url"]).'" alt="Image logement" style="max-width:200px;display:block;margin-bottom:1em;">';
-	// Nom du logement sous l'image
-	echo '<h3 style="margin-bottom:1em;">'.htmlspecialchars($valeur["name"]).'</h3>';
-	// Toutes les infos sous le nom
-	echo '<div style="margin-left:10px;">';
-	echo '<p>Propriétaire : '.htmlspecialchars($valeur["host_name"]).'</p>';
-	echo '<img src="'.htmlspecialchars($valeur["host_thumbnail_url"]).'" alt="Image hôte" style="max-width:80px;display:block;margin-bottom:1em;">';
-	echo '<p>Prix : '.htmlspecialchars($valeur["price"]).' €</p>';
-	echo '<p>Ville : '.htmlspecialchars($valeur["neighbourhood_group_cleansed"]).'</p>';
-	echo '<p>Score des avis : '.htmlspecialchars($valeur["review_scores_value"]).'</p>';
-	echo '</div>';
-	echo '</li>';
+	echo '<li class="listing-item">';
+	echo '<div class="listing-body">';
+		echo '<h4 class="listing-title">'.htmlspecialchars($valeur["name"]).'</h4>';
+		echo '<div class="listing-thumb"><img src="'.htmlspecialchars($valeur["picture_url"]).'" alt="Image logement"></div>';
+		echo '<div class="host-block">';
+			echo '<span class="host-thumb"><img src="'.htmlspecialchars($valeur["host_thumbnail_url"]).'" alt="Hôte"></span>';
+			echo '<div class="host-name muted">'.htmlspecialchars($valeur["host_name"]).'</div>';
+			echo '</div>';
+		    echo '<div class="meta" style="margin-top:10px;display:flex;gap:12px;align-items:center;">';
+			echo '<div class="listing-price">Prix: '.htmlspecialchars($valeur["price"]).' €</div>';
+			echo '<div class="listing-meta">Ville: '.htmlspecialchars($valeur["neighbourhood_group_cleansed"]).'</div>';
+			echo '<div class="score muted">Score: '.htmlspecialchars($valeur["review_scores_value"]).'</div>';
+			echo '</div>';
+		echo '</div>';
+		echo '</li>';
 }
 echo '</ul>';
 
-// Pagination
-echo '<div style="margin-top:2em;">';
+echo '<div class="pagination">';
 if ($page > 1) {
 	$params = $_GET;
 	$params['page'] = $page - 1;
-	echo '<a href="?'.http_build_query($params).'">&lt; Précédent</a> ';
+	echo '<a class="btn btn-ghost" href="?'.http_build_query($params).'">&lt; Précédent</a>';
 }
 for ($i = 1; $i <= $nbPages; $i++) {
 	$params = $_GET;
 	$params['page'] = $i;
-	$color = ($i == $page) ? 'red' : 'inherit';
-	echo '<a href="?'.http_build_query($params).'" style="color:'.$color.';font-weight:bold;margin:0 4px;">'.$i.'</a>';
+	$active = ($i == $page) ? 'active' : '';
+	echo '<a class="'. $active .'" href="?'.http_build_query($params).'">'.$i.'</a>';
 }
 if ($page < $nbPages) {
 	$params = $_GET;
 	$params['page'] = $page + 1;
-	echo ' <a href="?'.http_build_query($params).'">Suivant &gt;</a>';
+	echo '<a class="btn btn-ghost" href="?'.http_build_query($params).'">Suivant &gt;</a>';
 }
 echo '</div>';
 
+echo '</section>'; 
+
+echo '</div>'; 
+echo '</div>'; 
 ?>
